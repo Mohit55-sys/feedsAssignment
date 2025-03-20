@@ -1,5 +1,6 @@
 
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:create_post/createPost/domain/create_post_state.dart';
 import 'package:create_post/main.dart';
@@ -7,6 +8,7 @@ import 'package:create_post/utils/common.dart';
 import 'package:create_post/utils/database.dart';
 import 'package:create_post/utils/routes/router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -119,11 +121,23 @@ class CreatePostCubit extends Cubit<CreatePostState> {
     CommonWidgets.showLoaderDialog(navigatorKey.currentContext!);
     List <Uint8List> imageBytesList = [];
     for (var item in state.selectedImagesList) {
-      final Uint8List? uintData = await item.thumbnailData;
-      imageBytesList.add(uintData!);
+      if(state.selectedImagesList.length == 1 && state.selectedFilter !=null){
+        final RenderRepaintBoundary boundary =
+        widgetKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+        final image = await boundary.toImage(pixelRatio: 3.0); // Increase pixel ratio for better quality
+        final byteData = await image.toByteData(format: ImageByteFormat.png);
+        final buffer = byteData!.buffer.asUint8List();
+        imageBytesList.add(buffer);
+      }
+      else{
+        print("else=====?00");
+        final Uint8List? uintData = await item.thumbnailData;
+        imageBytesList.add(uintData!);
+      }
     }
     await _dbHelper.insertImagesWithText(postDescription.text,imageBytesList).then((e){
       fetchImagesWithText();
+      postDescription.clear();
       switchScreenVal(0);
       emit(state.copyWith(selectedImagesList: []));
       Navigator.pop(navigatorKey.currentContext!);
@@ -133,7 +147,7 @@ class CreatePostCubit extends Cubit<CreatePostState> {
   }
 
 
-  switchScreenVal(int newVal){
+  switchScreenVal(int newVal)async{
     emit(state.copyWith(currentScreenIndex : newVal));
     debugPrint("val$newVal");
   }
@@ -141,7 +155,7 @@ class CreatePostCubit extends Cubit<CreatePostState> {
 
   void scrollUp(CreatePostCubit cubit, int idx) {
     final updatedList = List<AssetEntity>.from(state.selectedImagesList)..add(state.mainEntities[idx]);
-   emit(state.copyWith(selectedImagesList: updatedList));
+    emit(state.copyWith(selectedImagesList: updatedList));
     cubit.controller.animateTo(
       cubit.controller.position.minScrollExtent,
       duration: const Duration(seconds: 1),
@@ -153,7 +167,7 @@ class CreatePostCubit extends Cubit<CreatePostState> {
   refreshFilter(){
     debugPrint("filter to be refresh0000>");
     state.selectedFilter = null;
-   emit(state.copyWith(selectedFilter: state.selectedFilter));
+    emit(state.copyWith(selectedFilter: state.selectedFilter));
     debugPrint("filter to be refresh0000>${state.selectedFilter}");
   }
 }

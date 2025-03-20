@@ -1,11 +1,14 @@
 
 
+import 'dart:ui';
+
 import 'package:create_post/createPost/domain/create_post_cubit.dart';
 import 'package:create_post/createPost/domain/create_post_state.dart';
 
 import 'package:create_post/utils/common.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 
@@ -49,7 +52,7 @@ class CreatePost extends StatelessWidget {
                   height:  size.width * 0.1, // Optional: Adjust height too
                   child:
                   FloatingActionButton.extended(
-                    onPressed: () {
+                    onPressed: () async {
                       if(state.currentScreenIndex == 0){
                         if(state.selectedImagesList.isNotEmpty){
                           cubit.switchScreenVal(1);
@@ -62,6 +65,8 @@ class CreatePost extends StatelessWidget {
 
                       }
                       else if(state.currentScreenIndex == 1){
+                        // Capture the widget as a bitmap
+
                         cubit.switchScreenVal(2);
                       }
                       else{
@@ -379,6 +384,40 @@ class CreatePost extends StatelessWidget {
 
 
                             child:
+                            state.selectedFilter != null ?
+                            state.selectedImagesList[index].type == AssetType.video ?
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+
+                                RepaintBoundary(
+                                  key: cubit.widgetKey,
+                                  child:ColorFiltered(
+                                    colorFilter:
+                                    state.selectedFilter!,
+                                    child:
+                                    AssetEntityImage(
+                                      state.selectedImagesList[index],
+                                      isOriginal: true, // Defaults to `true`.
+                                      thumbnailFormat: ThumbnailFormat.jpeg, // Defaults to `jpeg`.
+                                    ),),),
+
+                                Icon(Icons.play_circle_outline,
+                                  size: 50,
+                                  color: AppColors.buttonColor.withOpacity(0.9),)
+                              ],
+                            ):
+                            RepaintBoundary(
+                                key: cubit.widgetKey,
+                                child: ColorFiltered(
+                                    colorFilter:
+                                    state.selectedFilter!,
+                                    child:
+                                    AssetEntityImage(
+                                      state.selectedImagesList[index],
+                                      isOriginal: true, // Defaults to `true`.
+                                      thumbnailFormat: ThumbnailFormat.jpeg, // Defaults to `jpeg`.
+                                    ))):
                             state.selectedImagesList[index].type == AssetType.video ?
                             Stack(
                               alignment: Alignment.center,
@@ -398,8 +437,8 @@ class CreatePost extends StatelessWidget {
                               state.selectedImagesList[index],
                               isOriginal: true, // Defaults to `true`.
                               thumbnailFormat: ThumbnailFormat.jpeg, // Defaults to `jpeg`.
-                            ),
-
+                            )
+                            ,
                           );
                         }),
 
